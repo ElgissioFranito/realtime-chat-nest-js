@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model discussions {
+  id        Int        @id @default(autoincrement())
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now())
+  messages  messages[]
+}
+
+model messages {
+  id           Int         @id @default(autoincrement())
+  content      String
+  userId       Int
+  discussionId Int
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now())
+  discussions  discussions @relation(fields: [discussionId], references: [id], map: "Message_discussionId_fkey")
+  users        users       @relation(fields: [userId], references: [id], map: "Message_userId_fkey")
+
+  @@index([discussionId], map: "Message_discussionId_fkey")
+  @@index([userId], map: "Message_userId_fkey")
+}
+
+model users {
+  id        Int        @id @default(autoincrement())
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now())
+  messages  messages[]
+}
