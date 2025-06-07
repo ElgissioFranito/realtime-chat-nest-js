@@ -5,30 +5,40 @@ import { UsersService } from './users.service';
 @Controller('users')
 export class UsersController {
 
-    constructor(private userService : UsersService) {}
+    constructor(private userService: UsersService) { }
 
     @Get()
     findAll() {
         return this.userService.findAll();
     }
 
-    @Get('/:id') 
-    getOne(@Param('id') id : string){
+    @Get('/:id')
+    getOne(@Param('id') id: string) {
         return this.userService.getOne(+id);
     }
 
+    @Get('/paginate')
+    findAllPaginate() {
+        return this.userService.findAllPaginate();
+    }
+
+    @Get('/search/:word') 
+    search(@Param('word') word : string){
+        return this.userService.searchUser(word);
+    }
+
     @Post()
-    create(@Body() request : CreateUserDto) {
+    create(@Body() request: CreateUserDto) {
         return this.userService.createUser(request);
     }
 
     @Put('/:id')
-    update(@Param('id') id: string, @Body() request : CreateUserDto) {
-        return this.userService.updateUser(+id,request);
+    update(@Param('id') id: string, @Body() request: CreateUserDto) {
+        return this.userService.updateUser(+id, request);
     }
 
     @Delete('/:id')
-    remove(@Param('id') id : string){
+    remove(@Param('id') id: string) {
         return this.userService.removeUser(+id);
     }
 

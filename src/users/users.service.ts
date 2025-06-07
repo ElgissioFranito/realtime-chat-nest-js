@@ -17,6 +17,46 @@ export class UsersService {
         });
     }
 
+    async findAllPaginate(page: number = 1, limit: number = 10): Promise<users[]> {
+        return this.prismaService.users.findMany({
+            skip: (page - 1) * limit,
+            take: limit,
+        });
+    }
+
+    async searchUser(word: string): Promise<users[]> {
+        return this.prismaService.users.findMany({
+            where: {
+                name: { contains: word } // Recherche partielle
+            }
+        });
+
+        // // s'il ya des filtre ou plusieurs champs de recherche
+        // const whereConditions = {};
+
+        // if (filters.email) {
+        //     whereConditions['email'] = {
+        //         contains: filters.email,
+        //         mode: 'insensitive'
+        //     };
+        // }
+
+        // if (filters.name) {
+        //     whereConditions['name'] = {
+        //         contains: filters.name,
+        //         mode: 'insensitive'
+        //     };
+        // }
+
+        // if (filters.role) {
+        //     whereConditions['role'] = filters.role;
+        // }
+
+        // return this.prisma.user.findMany({
+        //     where: whereConditions
+        // });
+    }
+
     async createUser(createUserDto: CreateUserDto): Promise<users> {
         return this.prismaService.users.create({
             data: createUserDto
@@ -30,7 +70,7 @@ export class UsersService {
         });
     }
 
-    async removeUser(id: number) {
+    async removeUser(id: number): Promise<users> {
         return this.prismaService.users.delete({
             where: { id }
         });
