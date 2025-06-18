@@ -9,11 +9,16 @@ datasource db {
 }
 
 model discussions {
-  id        Int        @id @default(autoincrement())
+  id        Int               @id @default(autoincrement())
   name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
+  creatorId Int // Ajout du creatorId
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now())
   messages  messages[]
+  creator   users             @relation("DiscussionCreator", fields: [creatorId], references: [id], map: "Discussion_creatorId_fkey")
+  members   discussionUsers[] // Relation vers la table de jonction
+
+  @@index([creatorId], map: "Discussion_creatorId_fkey")
 }
 
 model messages {
@@ -31,9 +36,22 @@ model messages {
 }
 
 model users {
-  id        Int        @id @default(autoincrement())
-  name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
-  messages  messages[]
+  id                 Int               @id @default(autoincrement())
+  name               String
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @default(now())
+  messages           messages[]
+  createdDiscussions discussions[]     @relation("DiscussionCreator") // Relation pour les discussions créées
+  discussionMembers  discussionUsers[] // Relation vers la table de jonction
+}
+
+model discussionUsers {
+  userId       Int
+  discussionId Int
+  joinedAt     DateTime    @default(now())
+  users        users       @relation(fields: [userId], references: [id], map: "DiscussionMember_userId_fkey")
+  discussions  discussions @relation(fields: [discussionId], references: [id], map: "DiscussionMember_discussionId_fkey")
+
+  @@id([userId, discussionId]) // Clé primaire composite
+  @@index([discussionId], map: "DiscussionMember_discussionId_fkey")
 }
