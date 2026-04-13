@@ -1,17 +1,20 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { discussions } from 'generated/prisma';
-import { randomInt } from 'node:crypto';
 import { Server, Socket } from 'socket.io';
 import { DiscussionsService } from 'src/discussions/discussions.service';
+import { CreateMessageDto } from 'src/messages/dto/create-message.dto';
+import { MessagesService } from 'src/messages/messages.service';
 import { UsersService } from 'src/users/users.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer() server: Server;
+  @WebSocketServer()
+  server: Server;
 
   constructor(
     private discussionService: DiscussionsService,
-    private userService: UsersService
+    private userService: UsersService,
+    private readonly messagesService: MessagesService,
   ) { }
 
   async handleConnection(client: Socket) {
@@ -46,13 +49,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (userConnected) {
       await this.userService.removeUser(userConnected.id);
     }
-    
+
     this.server.emit('user-left', {
       message: `User left the chat: ${client.id}`,
       clientId: client.id,
-      userId : this.stringToUniqueNumber(client.id)
+      userId: this.stringToUniqueNumber(client.id)
     });
-    
+
   }
 
 
@@ -60,7 +63,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleMessage(client: Socket, payload: string): void {
     this.server.emit('message', payload);
   }
-
 
   @SubscribeMessage("createDiscussion")
   async createDiscussion(clientSocket: Socket, discussion: discussions) {
@@ -73,6 +75,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     console.log('connection.socketId : ' + clientSocket.id);
 
+  }
+
+  @SubscribeMessage('joinDiscussion')
+  handleJoinDiscussion(client: Socket, discussionId: string) {
+    client.join(discussionId);
+    console.log(`Client ${client.id} joined discussion ${discussionId}`);
+  }
+
+  @SubscribeMessage('sendMessage')
+  async handleSendMessage(
+    @MessageBody() createMessageDto: CreateMessageDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const message = await this.messagesService.createMessage(createMessageDto);
+    this.server
+      .to(createMessageDto.discussionId.toString())
+      .emit('message', message);
+    return message;
   }
 
   // Pour obtenir un nombre unique basé sur le "client.id"
